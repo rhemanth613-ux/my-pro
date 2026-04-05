@@ -1,0 +1,402 @@
+{
+  "players": [
+    {
+      "id": "PLY-0001",
+      "role": "player",
+      "fullName": "Ava Player",
+      "email": "ava.player@example.com",
+      "password": "$2a$10$7PNnq54UZ2GpGDTM3kke8eru8krr42oi3j9jZv6ZcGrytRwoSTbVG",
+      "mobileNumber": "9999999999",
+      "dateOfBirth": "2005-08-18",
+      "gender": "Female",
+      "country": "India",
+      "age": 20,
+      "profileImage": "",
+      "createdAt": "2026-03-30T03:45:44.361Z",
+      "selectedPlayers": [],
+      "primarySport": "Football",
+      "uploadedVideos": [
+        "VID-0001"
+      ]
+    },
+    {
+      "id": "PLY-0002",
+      "role": "player",
+      "fullName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "password": "$2a$10$Qd5cgdqae9Dy.sh9NnASSuR73eQ8SrWnpL7qsu1fw7u.eZegUmiPK",
+      "mobileNumber": "9346448542",
+      "dateOfBirth": "2004-09-11",
+      "gender": "Male",
+      "country": "india",
+      "age": 21,
+      "profileImage": "",
+      "createdAt": "2026-03-30T03:49:53.408Z",
+      "selectedPlayers": [],
+      "primarySport": "Cricket",
+      "uploadedVideos": [
+        "VID-0011",
+        "VID-0010",
+        "VID-0009",
+        "VID-0008",
+        "VID-0007",
+        "VID-0006",
+        "VID-0005",
+        "VID-0004",
+        "VID-0003",
+        "VID-0002"
+      ]
+    },
+    {
+      "id": "PLY-0003",
+      "role": "player",
+      "fullName": "New Player",
+      "email": "new.player@example.com",
+      "password": "$2a$10$oeVgW2SARRGvhMANKqRGC.5qnoQ9yitIwzUOl48tQpD2gITfdtbnW",
+      "mobileNumber": "7777777777",
+      "dateOfBirth": "2007-05-14",
+      "gender": "Male",
+      "country": "India",
+      "age": 18,
+      "profileImage": "",
+      "createdAt": "2026-03-30T04:02:27.166Z",
+      "selectedPlayers": [],
+      "primarySport": "",
+      "uploadedVideos": []
+    }
+  ],
+  "coaches": [
+    {
+      "id": "COA-0001",
+      "role": "coach",
+      "fullName": "Chris Coach",
+      "email": "coach@example.com",
+      "password": "$2a$10$raPb5DC9sNpljoQ1uh8xe.w.5FKzHaKov7eEiVulfXjM9UHw/7BSS",
+      "mobileNumber": "8888888888",
+      "dateOfBirth": "1990-02-11",
+      "gender": "Male",
+      "country": "India",
+      "age": 36,
+      "profileImage": "",
+      "createdAt": "2026-03-30T03:46:17.528Z",
+      "selectedPlayers": [
+        "PLY-0001"
+      ]
+    },
+    {
+      "id": "COA-0002",
+      "role": "coach",
+      "fullName": "K UDAY",
+      "email": "uday777@gmail.com",
+      "password": "$2a$10$8d0ZRyPlKpzKJ/M66KCDUeKWgCUbkUiqb9SLXH52LIaYq0sA77G8y",
+      "mobileNumber": "07036881918",
+      "dateOfBirth": "2000-09-11",
+      "gender": "Male",
+      "country": "India",
+      "age": 25,
+      "profileImage": "",
+      "createdAt": "2026-03-30T04:11:18.974Z",
+      "selectedPlayers": [
+        "PLY-0002"
+      ]
+    }
+  ],
+  "videos": [
+    {
+      "id": "VID-0011",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Basketball",
+      "ageGroup": "23+",
+      "position": "Shooting Guard",
+      "videoUrl": "/uploads/1775101395504-373539.mp4",
+      "aiMetrics": {
+        "speedScore": 26,
+        "accuracyScore": 55,
+        "reactionTime": 30,
+        "movementEfficiency": 58,
+        "techniqueQuality": 40,
+        "staminaEstimation": 17,
+        "overallPerformanceScore": 38,
+        "summary": "Video-based analysis for Shooting Guard in Basketball shows strongest movement efficiency and improvement headroom in stamina estimation.",
+        "suggestions": [
+          "Upload a longer continuous performance sequence to better reflect endurance.",
+          "Use a clearer camera angle and steady framing to improve technique analysis quality.",
+          "Include more high-intensity action moments to improve movement and reaction assessment."
+        ],
+        "analysisBasis": {
+          "durationSec": 8,
+          "resolution": "1280x720",
+          "fileSizeMb": 5.7,
+          "brightnessScore": 39,
+          "motionScore": 22,
+          "sharpnessScore": 26,
+          "brightnessConsistency": 83,
+          "ageGroup": "23+"
+        }
+      },
+      "uploadDate": "2026-04-02T03:43:15.530Z"
+    },
+    {
+      "id": "VID-0010",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Football",
+      "ageGroup": "13-15",
+      "position": "Defender",
+      "videoUrl": "/uploads/1775101032317-346340.mp4",
+      "aiMetrics": {
+        "speedScore": 78,
+        "accuracyScore": 80,
+        "reactionTime": 62,
+        "movementEfficiency": 91,
+        "techniqueQuality": 75,
+        "staminaEstimation": 69,
+        "overallPerformanceScore": 76,
+        "summary": "AI review indicates strong movement efficiency for Defender in Football. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-04-02T03:37:12.405Z"
+    },
+    {
+      "id": "VID-0009",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Cricket",
+      "ageGroup": "Under 12",
+      "position": "Batter",
+      "videoUrl": "/uploads/1775038019666-674877.mp4",
+      "aiMetrics": {
+        "speedScore": 94,
+        "accuracyScore": 93,
+        "reactionTime": 79,
+        "movementEfficiency": 66,
+        "techniqueQuality": 91,
+        "staminaEstimation": 62,
+        "overallPerformanceScore": 81,
+        "summary": "AI review indicates strong speed score for Batter in Cricket. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-04-01T10:06:59.695Z"
+    },
+    {
+      "id": "VID-0008",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Cricket",
+      "ageGroup": "Under 12",
+      "position": "Batter",
+      "videoUrl": "/uploads/1775037670663-307680.mp4",
+      "aiMetrics": {
+        "speedScore": 68,
+        "accuracyScore": 55,
+        "reactionTime": 88,
+        "movementEfficiency": 77,
+        "techniqueQuality": 83,
+        "staminaEstimation": 78,
+        "overallPerformanceScore": 75,
+        "summary": "AI review indicates strong reaction time for Batter in Cricket. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-04-01T10:01:10.711Z"
+    },
+    {
+      "id": "VID-0007",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Football",
+      "ageGroup": "19-22",
+      "position": "Goalkeeper",
+      "videoUrl": "/uploads/1775035129307-339192.mp4",
+      "aiMetrics": {
+        "speedScore": 86,
+        "accuracyScore": 65,
+        "reactionTime": 86,
+        "movementEfficiency": 71,
+        "techniqueQuality": 67,
+        "staminaEstimation": 70,
+        "overallPerformanceScore": 74,
+        "summary": "AI review indicates strong speed score for Goalkeeper in Football. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-04-01T09:18:49.331Z"
+    },
+    {
+      "id": "VID-0006",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Cricket",
+      "ageGroup": "13-15",
+      "position": "Bowler",
+      "videoUrl": "/uploads/1775015011988-228340.mp4",
+      "aiMetrics": {
+        "speedScore": 84,
+        "accuracyScore": 96,
+        "reactionTime": 63,
+        "movementEfficiency": 59,
+        "techniqueQuality": 83,
+        "staminaEstimation": 83,
+        "overallPerformanceScore": 78,
+        "summary": "AI review indicates strong accuracy score for Bowler in Cricket. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-04-01T03:43:32.028Z"
+    },
+    {
+      "id": "VID-0005",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Hockey",
+      "ageGroup": "13-15",
+      "position": "Defender",
+      "videoUrl": "/uploads/1775014558753-388238.mp4",
+      "aiMetrics": {
+        "speedScore": 58,
+        "accuracyScore": 82,
+        "reactionTime": 91,
+        "movementEfficiency": 89,
+        "techniqueQuality": 67,
+        "staminaEstimation": 85,
+        "overallPerformanceScore": 79,
+        "summary": "AI review indicates strong reaction time for Defender in Hockey. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-04-01T03:35:58.798Z"
+    },
+    {
+      "id": "VID-0004",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Basketball",
+      "ageGroup": "13-15",
+      "position": "Shooting Guard",
+      "videoUrl": "/uploads/1774927500161-553247.mp4",
+      "aiMetrics": {
+        "speedScore": 80,
+        "accuracyScore": 77,
+        "reactionTime": 71,
+        "movementEfficiency": 79,
+        "techniqueQuality": 67,
+        "staminaEstimation": 90,
+        "overallPerformanceScore": 77,
+        "summary": "AI review indicates strong stamina estimation for Shooting Guard in Basketball. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-03-31T03:25:00.305Z"
+    },
+    {
+      "id": "VID-0003",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Basketball",
+      "ageGroup": "Under 12",
+      "position": "Point Guard",
+      "videoUrl": "/uploads/1774843652921-338179.mp4",
+      "aiMetrics": {
+        "speedScore": 86,
+        "accuracyScore": 92,
+        "reactionTime": 68,
+        "movementEfficiency": 73,
+        "techniqueQuality": 83,
+        "staminaEstimation": 73,
+        "overallPerformanceScore": 79,
+        "summary": "AI review indicates strong accuracy score for Point Guard in Basketball. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-03-30T04:07:32.942Z"
+    },
+    {
+      "id": "VID-0002",
+      "playerId": "PLY-0002",
+      "playerName": "HEMANTH REDDY",
+      "email": "rhemanth613@gmail.com",
+      "sport": "Football",
+      "ageGroup": "Under 12",
+      "position": "Goalkeeper",
+      "videoUrl": "/uploads/1774842639550-216943.mp4",
+      "aiMetrics": {
+        "speedScore": 86,
+        "accuracyScore": 86,
+        "reactionTime": 65,
+        "movementEfficiency": 76,
+        "techniqueQuality": 59,
+        "staminaEstimation": 61,
+        "overallPerformanceScore": 72,
+        "summary": "AI review indicates strong speed score for Goalkeeper in Football. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-03-30T03:50:39.587Z"
+    },
+    {
+      "id": "VID-0001",
+      "playerId": "PLY-0001",
+      "playerName": "Ava Player",
+      "email": "ava.player@example.com",
+      "sport": "Football",
+      "ageGroup": "19-22",
+      "position": "Forward",
+      "videoUrl": "/uploads/1774842392750-445238.mp4",
+      "aiMetrics": {
+        "speedScore": 66,
+        "accuracyScore": 85,
+        "reactionTime": 61,
+        "movementEfficiency": 91,
+        "techniqueQuality": 67,
+        "staminaEstimation": 60,
+        "overallPerformanceScore": 72,
+        "summary": "AI review indicates strong movement efficiency for Forward in Football. Recommended focus: repeat high-intensity drills and video-based form corrections to improve match consistency.",
+        "suggestions": [
+          "Increase repetition under fatigue to improve late-session technique stability.",
+          "Review body positioning during decisive movements with coach-led frame analysis.",
+          "Add reaction and agility drills tailored to the selected position."
+        ]
+      },
+      "uploadDate": "2026-03-30T03:46:32.752Z"
+    }
+  ]
+}
