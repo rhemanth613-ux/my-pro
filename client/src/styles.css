@@ -110,9 +110,9 @@ button {
   flex-direction: column;
   gap: 18px;
   margin: 0 auto 26px;
-  max-width: 1240px;
-  padding: 22px;
-  border-radius: 32px;
+  max-width: 1500px;
+  padding: 28px 34px;
+  border-radius: 38px;
   border: 1px solid var(--border);
   background:
     linear-gradient(135deg, rgba(99, 212, 255, 0.08), rgba(125, 255, 191, 0.04) 40%, rgba(255, 184, 102, 0.06)),
@@ -128,9 +128,9 @@ button {
 }
 
 .hero h1 {
-  font-size: clamp(2.4rem, 8vw, 5rem);
-  max-width: 11ch;
-  letter-spacing: -0.04em;
+  font-size: clamp(3.2rem, 8vw, 6rem);
+  max-width: 10ch;
+  letter-spacing: -0.05em;
 }
 
 .hero p {
@@ -261,12 +261,41 @@ button {
   margin: 0 auto;
 }
 
-.auth-layout {
-  max-width: 1240px;
+.admin-layout {
+  max-width: 1500px;
   margin: 0 auto;
-  min-height: calc(100vh - 240px);
+}
+
+.admin-panel {
+  max-width: 1500px;
+}
+
+.admin-key-row {
   display: grid;
-  place-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.admin-subpanel {
+  padding: 18px;
+}
+
+.admin-pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.auth-layout {
+  max-width: 1500px;
+  margin: 0 auto;
+  min-height: calc(100vh - 280px);
+  display: grid;
+  place-items: start center;
+  padding-top: 120px;
 }
 
 .welcome-layout {
@@ -317,7 +346,13 @@ button {
 }
 
 .auth-card {
-  width: min(100%, 520px);
+  width: min(100%, 760px);
+  max-width: 760px;
+  padding: 34px 38px;
+  border-radius: 40px;
+  background:
+    linear-gradient(180deg, rgba(8, 18, 34, 0.96), rgba(9, 18, 34, 0.88)),
+    var(--panel);
 }
 
 .showcase-card {
@@ -365,7 +400,43 @@ button {
 
 .auth-form, .upload-grid, .filter-grid {
   display: grid;
+  gap: 18px;
+}
+
+.otp-field {
+  display: grid;
   gap: 12px;
+}
+
+.otp-btn {
+  width: 100%;
+}
+
+.inline-action-field {
+  position: relative;
+}
+
+.inline-action-field input {
+  padding-right: 190px;
+}
+
+.inline-action-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 18px;
+  padding: 12px 18px;
+  min-width: 150px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #04111f;
+  font-weight: 700;
+  box-shadow: 0 12px 24px rgba(99, 212, 255, 0.2);
+}
+
+.inline-action-btn:disabled {
+  opacity: 0.7;
 }
 
 .auth-form input, .auth-form select, .upload-grid input, .upload-grid select, .filter-grid input, .filter-grid select {
@@ -373,10 +444,11 @@ button {
   border: 1px solid var(--border);
   background: var(--panel-soft);
   color: var(--text);
-  border-radius: 18px;
-  padding: 15px 16px;
+  border-radius: 24px;
+  padding: 20px 24px;
   outline: none;
   transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  font-size: 1.05rem;
 }
 
 .auth-form input:focus,
@@ -402,9 +474,9 @@ button {
 }
 
 .primary-btn, .ghost-btn, .text-btn, .dropdown-action {
-  border-radius: 16px;
+  border-radius: 22px;
   border: 0;
-  padding: 14px 16px;
+  padding: 18px 20px;
 }
 
 .primary-btn {
@@ -412,6 +484,7 @@ button {
   color: #021018;
   font-weight: 700;
   box-shadow: 0 16px 30px rgba(99, 212, 255, 0.24);
+  font-size: 1rem;
 }
 
 .ghost-btn, .dropdown-action {
@@ -431,6 +504,8 @@ button {
   background: transparent;
   color: var(--accent);
   padding-left: 0;
+  justify-self: start;
+  font-size: 1rem;
 }
 
 .dropdown-action.danger {
@@ -543,6 +618,26 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   align-items: start;
+}
+
+.sports-search-wrap {
+  margin-bottom: 18px;
+}
+
+.sports-search {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--panel-soft);
+  color: var(--text);
+  border-radius: 22px;
+  padding: 16px 18px;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.sports-search:focus {
+  border-color: rgba(99, 212, 255, 0.48);
+  box-shadow: 0 0 0 4px rgba(99, 212, 255, 0.12);
 }
 
 .sport-card {
@@ -777,13 +872,38 @@ button {
   gap: 8px;
 }
 
+.dashboard-score-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-score-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--panel-soft);
+  border: 1px solid var(--border);
+}
+
+.dashboard-score-item span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.dashboard-score-item strong {
+  font-size: 1rem;
+}
+
 @media (min-width: 720px) {
   .app-shell {
     padding: 28px 24px 56px;
   }
 
   .hero {
-    padding: 28px;
+    padding: 34px 42px;
+    min-height: 250px;
   }
 
   .welcome-card {
@@ -797,6 +917,10 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-key-row {
+    grid-template-columns: 1fr auto;
+  }
+
   .sports-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -804,9 +928,13 @@ button {
 
 @media (min-width: 1024px) {
   .hero {
-    grid-template-columns: 1.15fr auto;
+    grid-template-columns: 1fr auto;
     display: grid;
     align-items: start;
+  }
+
+  .mode-switch {
+    justify-self: end;
   }
 
   .hero-card {

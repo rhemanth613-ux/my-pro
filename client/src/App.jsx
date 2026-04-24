@@ -53,7 +53,8 @@ const emptyRegister = {
   mobileNumber: "",
   dateOfBirth: "",
   gender: "",
-  country: ""
+  country: "",
+  phoneOtp: ""
 };
 
 function parseHash() {
@@ -80,6 +81,19 @@ function buildHash({ entryPage, role, mode, playerPage, selectedSport, videoId }
   return `#${params.toString()}`;
 }
 
+async function adminApi(path, adminKey) {
+  const response = await fetch(`${API_URL}${path}`, {
+    headers: {
+      "x-admin-key": adminKey
+    }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || "Admin request failed.");
+  }
+  return data;
+}
+
 function getStoredSession() {
   const raw = localStorage.getItem("sports-platform-session");
   return raw ? JSON.parse(raw) : null;
@@ -102,6 +116,12 @@ async function api(path, options = {}, token) {
     throw new Error(data.message || "Request failed.");
   }
   return data;
+}
+
+async function hashFile(file) {
+  const buffer = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function waitForEvent(target, eventName) {
@@ -338,6 +358,63 @@ function ProfileMenu({ user, onLogout, onUpload }) {
 
 function AuthPanel({ role, mode, onSwitchMode, onSubmit, loading, message }) {
   const [form, setForm] = useState(emptyRegister);
+  const [otpStatus, setOtpStatus] = useState("");
+  const [otpLoading, setOtpLoading] = useState({ phone: false, verifyPhone: false });
+  const [verification, setVerification] = useState({
+    phoneVerified: false,
+    phoneVerifiedToken: ""
+  });
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+
+  async function requestOtp() {
+    const value = form.mobileNumber;
+    if (!value) {
+      setOtpStatus("Enter mobile number first.");
+      return;
+    }
+    setOtpLoading((current) => ({ ...current, phone: true }));
+    try {
+      const result = await api("/auth/request-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: "phone", value })
+      });
+      setOtpStatus(result.message);
+      setPhoneOtpSent(true);
+      setVerification((current) => ({ ...current, phoneVerified: false, phoneVerifiedToken: "" }));
+    } catch (error) {
+      setOtpStatus(error.message);
+    } finally {
+      setOtpLoading((current) => ({ ...current, phone: false }));
+    }
+  }
+
+  async function verifyOtp() {
+    const value = form.mobileNumber;
+    const otp = form.phoneOtp;
+    if (!value || !otp) {
+      setOtpStatus("Enter mobile number and phone OTP.");
+      return;
+    }
+    setOtpLoading((current) => ({ ...current, verifyPhone: true }));
+    try {
+      const result = await api("/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: "phone", value, otp })
+      });
+      setOtpStatus(result.message);
+      setVerification((current) => ({
+        ...current,
+        phoneVerified: true,
+        phoneVerifiedToken: result.verifiedToken
+      }));
+    } catch (error) {
+      setOtpStatus(error.message);
+    } finally {
+      setOtpLoading((current) => ({ ...current, verifyPhone: false }));
+    }
+  }
 
   return (
     <section className="auth-card">
@@ -347,7 +424,7 @@ function AuthPanel({ role, mode, onSwitchMode, onSubmit, loading, message }) {
         className="auth-form"
         onSubmit={(event) => {
           event.preventDefault();
-          onSubmit(form);
+          onSubmit({ ...form, ...verification });
         }}
       >
         {mode === "register" ? (
@@ -355,7 +432,24 @@ function AuthPanel({ role, mode, onSwitchMode, onSubmit, loading, message }) {
             <input placeholder="Full Name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required />
             <input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
             <input type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-            <input placeholder="Mobile Number" value={form.mobileNumber} onChange={(e) => setForm({ ...form, mobileNumber: e.target.value })} required />
+            <div className="inline-action-field">
+              <input placeholder="Mobile Number" value={form.mobileNumber} onChange={(e) => setForm({ ...form, mobileNumber: e.target.value })} required />
+              <button className="inline-action-btn" type="button" onClick={() => requestOtp()} disabled={otpLoading.phone}>
+                {otpLoading.phone ? "Sending..." : phoneOtpSent ? "OTP Sent" : "Send OTP"}
+              </button>
+            </div>
+            <div className="inline-action-field">
+              <input
+                placeholder="Enter OTP"
+                value={form.phoneOtp}
+                onChange={(e) => setForm({ ...form, phoneOtp: e.target.value })}
+                disabled={!phoneOtpSent}
+                required
+              />
+              <button className="inline-action-btn" type="button" onClick={() => verifyOtp()} disabled={!phoneOtpSent || otpLoading.verifyPhone}>
+                {verification.phoneVerified ? "Verified" : otpLoading.verifyPhone ? "Verifying..." : "Verify Phone"}
+              </button>
+            </div>
             <input type="date" value={form.dateOfBirth} onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })} required />
             <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })} required>
               <option value="">Select Gender</option>
@@ -375,6 +469,7 @@ function AuthPanel({ role, mode, onSwitchMode, onSubmit, loading, message }) {
           {loading ? "Please wait..." : mode === "login" ? "Login" : "Register"}
         </button>
       </form>
+      {otpStatus ? <div className="info-banner">{otpStatus}</div> : null}
       {message ? <div className="info-banner">{message}</div> : null}
       <button className="text-btn" type="button" onClick={onSwitchMode}>
         {mode === "login" ? "Need an account? Register" : "Already registered? Login"}
@@ -421,8 +516,9 @@ function VideoUploadForm({ user, selectedSport, onBack, onUploaded, token }) {
     setStatus("Analyzing Video...");
 
     let analysisMeta;
+    let videoHash;
     try {
-      analysisMeta = await analyzeVideoFile(file);
+      [analysisMeta, videoHash] = await Promise.all([analyzeVideoFile(file), hashFile(file)]);
     } catch (error) {
       setLoading(false);
       setStatus(error.message);
@@ -436,10 +532,11 @@ function VideoUploadForm({ user, selectedSport, onBack, onUploaded, token }) {
     formData.append("ageGroup", ageGroup);
     formData.append("position", position);
     formData.append("analysisMeta", JSON.stringify(analysisMeta));
+    formData.append("videoHash", videoHash);
 
     try {
       const result = await api("/videos/upload", { method: "POST", body: formData }, token);
-      setStatus("Video Successfully Submitted");
+      setStatus(result.warning || "Video Successfully Submitted");
       onUploaded(result.video);
     } catch (error) {
       setStatus(error.message);
@@ -577,7 +674,23 @@ function UploadedReview({ video, onClose }) {
   );
 }
 
-function PlayerDashboard({ user, videos }) {
+function PlayerDashboard({ user, videos, token, onRefresh, onShowVideo }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [message, setMessage] = useState("");
+  const filteredVideos = videos.filter((video) =>
+    `${video.sport} ${video.position}`.toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
+
+  async function handleDelete(videoId) {
+    try {
+      await api(`/player/videos/${videoId}`, { method: "DELETE" }, token);
+      setMessage("Video deleted successfully.");
+      await onRefresh();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
   return (
     <section className="panel">
       <div className="panel-head">
@@ -588,21 +701,24 @@ function PlayerDashboard({ user, videos }) {
       </div>
       <div className="stat-row">
         <div className="stat-card">
-          <span>Registered Sport</span>
-          <strong>{user.primarySport || "Choose from Sports Dashboard"}</strong>
-        </div>
-        <div className="stat-card">
-          <span>Total Uploads</span>
-          <strong>{videos.length}</strong>
-        </div>
-        <div className="stat-card">
           <span>Best Score</span>
           <strong>{videos[0] ? Math.max(...videos.map((v) => v.aiMetrics.overallPerformanceScore)) : 0}%</strong>
         </div>
       </div>
+      <div className="sports-search-wrap">
+        <input
+          className="sports-search"
+          type="text"
+          placeholder="Search by sport or position"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+        />
+      </div>
+      {message ? <div className="info-banner">{message}</div> : null}
       <div className="dashboard-list">
         {videos.length === 0 ? <div className="empty-card">No performance videos yet. Upload a new assessment to begin.</div> : null}
-        {videos.map((video) => (
+        {videos.length > 0 && filteredVideos.length === 0 ? <div className="empty-card">No matching uploads found.</div> : null}
+        {filteredVideos.map((video) => (
           <article className="video-card" key={video.id}>
             <div className="video-card-head">
               <div>
@@ -615,11 +731,147 @@ function PlayerDashboard({ user, videos }) {
               <span>{video.ageGroup}</span>
               <span>{new Date(video.uploadDate).toLocaleDateString()}</span>
             </div>
-            <video src={`http://localhost:4000${video.videoUrl}`} controls playsInline />
+            <div className="dashboard-score-grid">
+              {METRIC_LABELS.map(([key, label]) => (
+                <div className="dashboard-score-item" key={key}>
+                  <span>{label}</span>
+                  <strong>{video.aiMetrics[key]}%</strong>
+                </div>
+              ))}
+            </div>
+            <button className="primary-btn" type="button" onClick={() => onShowVideo(video)}>
+              Show Video
+            </button>
+            <button className="ghost-btn" type="button" onClick={() => handleDelete(video.id)}>
+              Delete Video
+            </button>
           </article>
         ))}
       </div>
     </section>
+  );
+}
+
+function PlayerVideoPage({ video, onBack }) {
+  if (!video) return null;
+
+  return (
+    <section className="panel stack-gap">
+      <div className="panel-head">
+        <div>
+          <div className="section-eyebrow">Video Page</div>
+          <h3>{video.sport} performance video</h3>
+        </div>
+        <button className="ghost-btn" type="button" onClick={onBack}>
+          Back to Dashboard
+        </button>
+      </div>
+      <div className="video-stage">
+        <video src={`http://localhost:4000${video.videoUrl}`} controls autoPlay playsInline className="video-player" />
+      </div>
+    </section>
+  );
+}
+
+function CoachVideoPage({ video, onBack }) {
+  if (!video) return null;
+
+  return (
+    <section className="panel stack-gap">
+      <div className="panel-head">
+        <div>
+          <div className="section-eyebrow">Coach Video Page</div>
+          <h3>{video.playerName} performance video</h3>
+        </div>
+        <button className="ghost-btn" type="button" onClick={onBack}>
+          Back to Coach Dashboard
+        </button>
+      </div>
+      <div className="video-stage">
+        <video src={`http://localhost:4000${video.videoUrl}`} controls autoPlay playsInline className="video-player" />
+      </div>
+    </section>
+  );
+}
+
+function AdminPage() {
+  const [adminKey, setAdminKey] = useState(localStorage.getItem("sports-admin-key") || "");
+  const [snapshot, setSnapshot] = useState(null);
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function loadDatabase() {
+    setLoading(true);
+    setStatus("");
+    try {
+      const result = await adminApi("/admin/database", adminKey);
+      setSnapshot(result);
+      localStorage.setItem("sports-admin-key", adminKey);
+    } catch (error) {
+      setStatus(error.message);
+      setSnapshot(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="admin-layout">
+      <section className="panel admin-panel">
+        <div className="panel-head">
+          <div>
+            <div className="section-eyebrow">Admin Page</div>
+            <h3>Database Viewer</h3>
+          </div>
+        </div>
+        <div className="admin-key-row">
+          <input
+            className="sports-search"
+            type="password"
+            placeholder="Enter admin key"
+            value={adminKey}
+            onChange={(event) => setAdminKey(event.target.value)}
+          />
+          <button className="primary-btn" type="button" onClick={loadDatabase} disabled={loading || !adminKey}>
+            {loading ? "Loading..." : "Load Database"}
+          </button>
+        </div>
+        {status ? <div className="info-banner">{status}</div> : null}
+        {snapshot ? (
+          <div className="stack-gap">
+            <div className="stat-row">
+              <div className="stat-card">
+                <span>Players</span>
+                <strong>{snapshot.summary.players}</strong>
+              </div>
+              <div className="stat-card">
+                <span>Coaches</span>
+                <strong>{snapshot.summary.coaches}</strong>
+              </div>
+              <div className="stat-card">
+                <span>Videos</span>
+                <strong>{snapshot.summary.videos}</strong>
+              </div>
+            </div>
+
+            <section className="panel admin-subpanel">
+              <div className="section-eyebrow">Players</div>
+              <pre className="admin-pre">{JSON.stringify(snapshot.players, null, 2)}</pre>
+            </section>
+
+            <section className="panel admin-subpanel">
+              <div className="section-eyebrow">Coaches</div>
+              <pre className="admin-pre">{JSON.stringify(snapshot.coaches, null, 2)}</pre>
+            </section>
+
+            <section className="panel admin-subpanel">
+              <div className="section-eyebrow">Videos</div>
+              <pre className="admin-pre">{JSON.stringify(snapshot.videos, null, 2)}</pre>
+            </section>
+          </div>
+        ) : null}
+      </section>
+    </main>
   );
 }
 
@@ -629,6 +881,8 @@ function CoachDashboard({ token, user }) {
   const [filters, setFilters] = useState({ q: "", sport: "", position: "", minScore: "" });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [coachPage, setCoachPage] = useState("dashboard");
 
   async function loadData(currentFilters = filters) {
     setLoading(true);
@@ -667,6 +921,10 @@ function CoachDashboard({ token, user }) {
 
   const selectedIds = new Set(selected.map((item) => item.playerId));
   const positions = useMemo(() => Object.values(POSITION_MAP).flat(), []);
+
+  if (coachPage === "video") {
+    return <CoachVideoPage video={selectedVideo} onBack={() => setCoachPage("dashboard")} />;
+  }
 
   return (
     <section className="stack-gap">
@@ -725,12 +983,24 @@ function CoachDashboard({ token, user }) {
                   <span>{entry.ageGroup}</span>
                   <span>{new Date(entry.uploadDate).toLocaleDateString()}</span>
                 </div>
-                <video src={`http://localhost:4000${entry.videoUrl}`} controls playsInline />
-                <div className="metrics-inline">
-                  {METRIC_LABELS.slice(0, 3).map(([key, label]) => (
-                    <span key={key}>{label}: {entry.aiMetrics[key]}%</span>
+                <div className="dashboard-score-grid">
+                  {METRIC_LABELS.map(([key, label]) => (
+                    <div className="dashboard-score-item" key={key}>
+                      <span>{label}</span>
+                      <strong>{entry.aiMetrics[key]}%</strong>
+                    </div>
                   ))}
                 </div>
+                <button
+                  className="ghost-btn"
+                  type="button"
+                  onClick={() => {
+                    setSelectedVideo(entry);
+                    setCoachPage("video");
+                  }}
+                >
+                  Show Video
+                </button>
                 <button className={chosen ? "ghost-btn" : "primary-btn"} type="button" onClick={() => toggleSelection(entry.playerId, chosen)}>
                   {chosen ? "Remove Player" : "Add Player to Dashboard"}
                 </button>
@@ -757,7 +1027,24 @@ function CoachDashboard({ token, user }) {
                 </div>
                 <div className="pill">{entry.aiMetrics.overallPerformanceScore}%</div>
               </div>
-              <video src={`http://localhost:4000${entry.videoUrl}`} controls playsInline />
+              <div className="dashboard-score-grid">
+                {METRIC_LABELS.map(([key, label]) => (
+                  <div className="dashboard-score-item" key={key}>
+                    <span>{label}</span>
+                    <strong>{entry.aiMetrics[key]}%</strong>
+                  </div>
+                ))}
+              </div>
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={() => {
+                  setSelectedVideo(entry);
+                  setCoachPage("video");
+                }}
+              >
+                Show Video
+              </button>
             </article>
           ))}
         </div>
@@ -778,6 +1065,7 @@ export default function App() {
   const [latestVideo, setLatestVideo] = useState(null);
   const [playerPage, setPlayerPage] = useState(initialRoute?.playerPage || "sports");
   const [entryPage, setEntryPage] = useState(initialRoute?.entryPage || "welcome");
+  const [sportSearch, setSportSearch] = useState("");
   const restoringFromHash = useRef(false);
 
   useEffect(() => {
@@ -922,9 +1210,30 @@ export default function App() {
 
   function renderPlayerPage() {
     if (!session || session.user.role !== "player") return null;
+    const filteredSports = SPORTS.filter((sport) =>
+      sport.name.toLowerCase().includes(sportSearch.trim().toLowerCase())
+    );
+
+    if (playerPage === "video") {
+      return <PlayerVideoPage video={latestVideo} onBack={() => setPlayerPage("dashboard")} />;
+    }
 
     if (playerPage === "dashboard") {
-      return <PlayerDashboard user={{ ...session.user, age: calculateAge(session.user.dateOfBirth) }} videos={dashboard} />;
+      return (
+        <PlayerDashboard
+          user={{ ...session.user, age: calculateAge(session.user.dateOfBirth) }}
+          videos={dashboard}
+          token={session.token}
+          onRefresh={async () => {
+            const result = await api("/player/dashboard", {}, session.token);
+            setDashboard(result.videos);
+          }}
+          onShowVideo={(video) => {
+            setLatestVideo(video);
+            setPlayerPage("video");
+          }}
+        />
+      );
     }
 
     if (playerPage === "upload") {
@@ -956,8 +1265,17 @@ export default function App() {
             <h3>Choose your sport and continue to upload</h3>
           </div>
         </div>
+        <div className="sports-search-wrap">
+          <input
+            className="sports-search"
+            type="text"
+            placeholder="Search sports"
+            value={sportSearch}
+            onChange={(event) => setSportSearch(event.target.value)}
+          />
+        </div>
         <div className="sports-grid">
-          {SPORTS.map((sport) => (
+          {filteredSports.map((sport) => (
             <SportCard
               key={sport.name}
               sport={sport}
@@ -969,6 +1287,7 @@ export default function App() {
             />
           ))}
         </div>
+        {filteredSports.length === 0 ? <div className="empty-card">No sports found.</div> : null}
       </section>
     );
   }
@@ -978,32 +1297,35 @@ export default function App() {
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
       <div className="ambient ambient-three" />
-      {(session || entryPage === "auth") ? (
-        <header className="hero">
-          <div className="hero-copy">
-            <div className="section-eyebrow">Sports Talent Platform</div>
-            <h1>Player Access</h1>
-          </div>
-          {session ? (
-            <ProfileMenu
-              user={session.user}
-              onLogout={handleLogout}
-              onUpload={handleProfileUpload}
-            />
-          ) : (
-            <div className="mode-switch">
-              <button className={role === "player" ? "chip active" : "chip"} type="button" onClick={() => setRole("player")}>
-                Player
-              </button>
-              <button className={role === "coach" ? "chip active" : "chip"} type="button" onClick={() => setRole("coach")}>
-                Coach
-              </button>
-            </div>
-          )}
-        </header>
-      ) : null}
+      {entryPage === "admin" ? <AdminPage /> : null}
+      {entryPage === "admin" ? null : (
+        <>
+          {(session || entryPage === "auth") ? (
+            <header className="hero">
+              <div className="hero-copy">
+                <div className="section-eyebrow">Sports Talent Platform</div>
+                <h1>Player Access</h1>
+              </div>
+              {session ? (
+                <ProfileMenu
+                  user={session.user}
+                  onLogout={handleLogout}
+                  onUpload={handleProfileUpload}
+                />
+              ) : (
+                <div className="mode-switch">
+                  <button className={role === "player" ? "chip active" : "chip"} type="button" onClick={() => setRole("player")}>
+                    Player
+                  </button>
+                  <button className={role === "coach" ? "chip active" : "chip"} type="button" onClick={() => setRole("coach")}>
+                    Coach
+                  </button>
+                </div>
+              )}
+            </header>
+          ) : null}
 
-      {!session ? (
+          {!session ? (
         entryPage === "welcome" ? (
           <main className="welcome-layout">
             <section className="welcome-card">
@@ -1074,6 +1396,8 @@ export default function App() {
         <main className="content-stack">
           <CoachDashboard token={session.token} user={session.user} />
         </main>
+      )}
+        </>
       )}
     </div>
   );

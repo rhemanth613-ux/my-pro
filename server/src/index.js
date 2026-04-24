@@ -1,3 +1,4 @@
+import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import fs from "fs";
@@ -5,6 +6,8 @@ import path from "path";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import multer from "multer";
+import crypto from "crypto";
+import twilio from "twilio";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,6 +18,16 @@ const uploadsDir = path.join(rootDir, "uploads");
 const app = express();
 const port = 4000;
 const JWT_SECRET = process.env.JWT_SECRET || "sports-talent-secret";
+const ADMIN_PAGE_KEY = process.env.ADMIN_PAGE_KEY || "admin123";
+const otpStore = new Map();
+const twilioVerifyEnabled = Boolean(
+  process.env.TWILIO_ACCOUNT_SID &&
+  process.env.TWILIO_AUTH_TOKEN &&
+  process.env.TWILIO_VERIFY_SERVICE_SID
+);
+const twilioClient = twilioVerifyEnabled
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
 
 const SPORTS = [
   "Cricket",
@@ -101,6 +114,64 @@ function sanitizeUser(user) {
   return safeUser;
 }
 
+function sanitizeVideo(video) {
+  const { videoHash, ...safeVideo } = video;
+  return safeVideo;
+}
+
+function sanitizeAdminUser(user) {
+  const { password, ...safeUser } = user;
+  return safeUser;
+}
+
+function buildAdminSnapshot() {
+  const db = readDb();
+  return {
+    summary: {
+      players: db.players.length,
+      coaches: db.coaches.length,
+      videos: db.videos.length
+    },
+    players: db.players.map(sanitizeAdminUser),
+    coaches: db.coaches.map(sanitizeAdminUser),
+    videos: db.videos.map(sanitizeVideo)
+  };
+}
+
+function createVerificationToken() {
+  return crypto.randomBytes(24).toString("hex");
+}
+
+function otpKey(channel, value) {
+  return `${channel}:${String(value).trim().toLowerCase()}`;
+}
+
+function normalizePhoneNumber(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("+")) {
+    return `+${raw.slice(1).replace(/\D/g, "")}`;
+  }
+
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `+91${digits}`;
+  }
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return `+${digits}`;
+  }
+  return digits;
+}
+
+function cleanupOtp(key) {
+  const existing = otpStore.get(key);
+  if (existing && existing.expiresAt < Date.now()) {
+    otpStore.delete(key);
+    return null;
+  }
+  return existing || null;
+}
+
 function auth(requiredRole) {
   return (req, res, next) => {
     const authHeader = req.headers.authorization || "";
@@ -120,6 +191,14 @@ function auth(requiredRole) {
       return res.status(401).json({ message: "Invalid token." });
     }
   };
+}
+
+function adminAuth(req, res, next) {
+  const adminKey = req.headers["x-admin-key"];
+  if (!adminKey || adminKey !== ADMIN_PAGE_KEY) {
+    return res.status(401).json({ message: "Invalid admin key." });
+  }
+  next();
 }
 
 function getCurrentUser(req) {
@@ -224,6 +303,17 @@ function validateRegistration(body, role) {
   return null;
 }
 
+function validateVerificationToken(channel, value, token) {
+  if (channel !== "phone") {
+    return true;
+  }
+  const entry = cleanupOtp(otpKey(channel, normalizePhoneNumber(value)));
+  if (!entry || !entry.verifiedToken || entry.verifiedToken !== token) {
+    return false;
+  }
+  return true;
+}
+
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -238,6 +328,69 @@ app.get("/api/sports", (_req, res) => {
   });
 });
 
+app.get("/api/admin/database", adminAuth, (_req, res) => {
+  return res.json(buildAdminSnapshot());
+});
+
+app.post("/api/auth/request-otp", (req, res) => {
+  const { channel, value } = req.body || {};
+  if (channel !== "phone" || !value) {
+    return res.status(400).json({ message: "Channel and value are required." });
+  }
+  const phoneNumber = normalizePhoneNumber(value);
+
+  if (!twilioVerifyEnabled) {
+    return res.status(500).json({ message: "Twilio Verify is not configured." });
+  }
+
+  twilioClient.verify.v2
+    .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+    .verifications.create({ to: phoneNumber, channel: "sms" })
+    .then(() => {
+      otpStore.set(otpKey(channel, phoneNumber), {
+        verifiedToken: "",
+        expiresAt: Date.now() + 10 * 60 * 1000
+      });
+      return res.json({ message: "SMS OTP sent successfully." });
+    })
+    .catch(() => {
+      return res.status(400).json({ message: "Unable to send SMS OTP." });
+    });
+});
+
+app.post("/api/auth/verify-otp", (req, res) => {
+  const { channel, value, otp } = req.body || {};
+  if (channel !== "phone" || !value || !otp) {
+    return res.status(400).json({ message: "Channel, value, and OTP are required." });
+  }
+  const phoneNumber = normalizePhoneNumber(value);
+
+  if (!twilioVerifyEnabled) {
+    return res.status(500).json({ message: "Twilio Verify is not configured." });
+  }
+
+  twilioClient.verify.v2
+    .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+    .verificationChecks.create({ to: phoneNumber, code: String(otp).trim() })
+    .then((result) => {
+      if (result.status !== "approved") {
+        return res.status(400).json({ message: "Invalid OTP." });
+      }
+
+      const key = otpKey(channel, phoneNumber);
+      const entry = cleanupOtp(key) || { expiresAt: Date.now() + 10 * 60 * 1000 };
+      entry.verifiedToken = createVerificationToken();
+      otpStore.set(key, entry);
+      return res.json({
+        message: "Phone number verified.",
+        verifiedToken: entry.verifiedToken
+      });
+    })
+    .catch(() => {
+      return res.status(400).json({ message: "Unable to verify OTP." });
+    });
+});
+
 app.post("/api/auth/:role/register", async (req, res) => {
   const role = req.params.role;
   if (!["player", "coach"].includes(role)) {
@@ -247,6 +400,10 @@ app.post("/api/auth/:role/register", async (req, res) => {
   const error = validateRegistration(req.body, role);
   if (error) {
     return res.status(400).json({ message: error });
+  }
+
+  if (!validateVerificationToken("phone", req.body.mobileNumber, req.body.phoneVerifiedToken)) {
+    return res.status(400).json({ message: "Please verify your phone number with OTP." });
   }
 
   const db = readDb();
@@ -354,7 +511,7 @@ app.post("/api/videos/upload", auth("player"), upload.single("video"), (req, res
     return res.status(400).json({ message: "Only video files are allowed." });
   }
 
-  const { sport, ageGroup, position } = req.body;
+  const { sport, ageGroup, position, videoHash = "" } = req.body;
   if (!sport || !ageGroup || !position) {
     return res.status(400).json({ message: "Sport, age group, and position are required." });
   }
@@ -376,7 +533,8 @@ app.post("/api/videos/upload", auth("player"), upload.single("video"), (req, res
     analysisMeta = null;
   }
 
-  const analysis = buildAnalysis(analysisMeta, sport, position, ageGroup);
+  const duplicateVideo = videoHash ? db.videos.find((item) => item.videoHash === videoHash) : null;
+  const analysis = duplicateVideo ? duplicateVideo.aiMetrics : buildAnalysis(analysisMeta, sport, position, ageGroup);
   const video = {
     id: `VID-${String(db.videos.length + 1).padStart(4, "0")}`,
     playerId: player.id,
@@ -386,7 +544,9 @@ app.post("/api/videos/upload", auth("player"), upload.single("video"), (req, res
     ageGroup,
     position,
     videoUrl: `/uploads/${req.file.filename}`,
+    videoHash,
     aiMetrics: analysis,
+    duplicateOf: duplicateVideo ? duplicateVideo.id : "",
     uploadDate: new Date().toISOString()
   };
 
@@ -396,7 +556,8 @@ app.post("/api/videos/upload", auth("player"), upload.single("video"), (req, res
 
   return res.status(201).json({
     message: "Video Successfully Submitted",
-    video
+    warning: duplicateVideo ? "This video was already analyzed." : "",
+    video: sanitizeVideo(video)
   });
 });
 
@@ -407,11 +568,37 @@ app.get("/api/player/dashboard", auth("player"), (req, res) => {
     return res.status(404).json({ message: "Player not found." });
   }
 
-  const videos = db.videos.filter((item) => item.playerId === player.id);
+  const videos = db.videos.filter((item) => item.playerId === player.id).map(sanitizeVideo);
   return res.json({
     player: sanitizeUser(player),
     videos
   });
+});
+
+app.delete("/api/player/videos/:videoId", auth("player"), (req, res) => {
+  const db = readDb();
+  const player = db.players.find((item) => item.id === req.user.id);
+  if (!player) {
+    return res.status(404).json({ message: "Player not found." });
+  }
+
+  const videoIndex = db.videos.findIndex(
+    (item) => item.id === req.params.videoId && item.playerId === player.id
+  );
+  if (videoIndex === -1) {
+    return res.status(404).json({ message: "Video not found." });
+  }
+
+  const [video] = db.videos.splice(videoIndex, 1);
+  player.uploadedVideos = player.uploadedVideos.filter((id) => id !== video.id);
+
+  const filePath = path.join(rootDir, video.videoUrl.replace(/^\//, ""));
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+
+  writeDb(db);
+  return res.json({ message: "Video deleted successfully." });
 });
 
 app.get("/api/coach/players", auth("coach"), (req, res) => {
@@ -427,7 +614,7 @@ app.get("/api/coach/players", auth("coach"), (req, res) => {
     return queryMatch && sportMatch && positionMatch && scoreMatch;
   });
 
-  return res.json({ players: filtered });
+  return res.json({ players: filtered.map(sanitizeVideo) });
 });
 
 app.get("/api/coach/selected", auth("coach"), (req, res) => {
@@ -437,7 +624,7 @@ app.get("/api/coach/selected", auth("coach"), (req, res) => {
     return res.status(404).json({ message: "Coach not found." });
   }
 
-  const selected = db.videos.filter((video) => coach.selectedPlayers.includes(video.playerId));
+  const selected = db.videos.filter((video) => coach.selectedPlayers.includes(video.playerId)).map(sanitizeVideo);
   return res.json({ selectedPlayers: selected });
 });
 
